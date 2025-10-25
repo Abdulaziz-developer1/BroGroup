@@ -1,73 +1,58 @@
 const Post = require("../models/posts.model");
 
-const createPost = async (req, res) => {
+exports.getAllPosts = async (req, res) => {
   try {
-    const { title, content } = req.body;
-    if (!title || !content) {
-      return res
-        .status(400)
-        .json({ message: "Title and content are required" });
-    }
-
-    const newPost = await Post.create({ title, content });
-    res.status(201).json(newPost);
+    const posts = await Post.find();
+    res.status(200).json(posts);
   } catch (err) {
-    console.error("Create Post Error:", err);
-    res.status(500).json({ message: "Server error" });
+    console.error("Error fetching posts:", err);
+    res.status(500).json({ message: "Server error", error: err.message });
   }
 };
 
-const getAllPosts = async (req, res) => {
-  try {
-    const posts = await Post.find().sort({ createdAt: -1 });
-    res.json(posts);
-  } catch (err) {
-    console.error("Get All Posts Error:", err);
-    res.status(500).json({ message: "Server error" });
-  }
-};
-
-const getPostById = async (req, res) => {
+exports.getPostById = async (req, res) => {
   try {
     const post = await Post.findById(req.params.id);
     if (!post) return res.status(404).json({ message: "Post not found" });
-    res.json(post);
+    res.status(200).json(post);
   } catch (err) {
-    console.error("Get Post By ID Error:", err);
-    res.status(500).json({ message: "Server error" });
+    console.error("Error fetching post by ID:", err);
+    res.status(500).json({ message: "Server error", error: err.message });
   }
 };
 
-const updatePost = async (req, res) => {
+exports.createPost = async (req, res) => {
   try {
-    const updatedPost = await Post.findByIdAndUpdate(req.params.id, req.body, {
+    const { title, content, time } = req.body;
+    const newPost = new Post({ title, content, time });
+    await newPost.save();
+    res.status(201).json(newPost);
+  } catch (err) {
+    console.error("Error creating post:", err);
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+};
+
+exports.updatePost = async (req, res) => {
+  try {
+    const updated = await Post.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
     });
-    if (!updatedPost)
-      return res.status(404).json({ message: "Post not found" });
-    res.json(updatedPost);
+    if (!updated) return res.status(404).json({ message: "Post not found" });
+    res.status(200).json(updated);
   } catch (err) {
-    console.error("Update Post Error:", err);
-    res.status(500).json({ message: "Server error" });
+    console.error("Error updating post:", err);
+    res.status(500).json({ message: "Server error", error: err.message });
   }
 };
 
-const deletePost = async (req, res) => {
+exports.deletePost = async (req, res) => {
   try {
-    const deletedPost = await Post.findByIdAndDelete(req.params.id);
-    if (!deletedPost)
-      return res.status(404).json({ message: "Post not found" });
-    res.json({ message: "Post deleted successfully" });
+    const deleted = await Post.findByIdAndDelete(req.params.id);
+    if (!deleted) return res.status(404).json({ message: "Post not found" });
+    res.status(200).json({ message: "Post deleted successfully" });
   } catch (err) {
-    console.error("Delete Post Error:", err);
-    res.status(500).json({ message: "Server error" });
+    console.error("Error deleting post:", err);
+    res.status(500).json({ message: "Server error", error: err.message });
   }
-};
-
-module.exports = {
-  createPost,
-  getAllPosts,
-  getPostById,
-  updatePost,
-  deletePost,
 };
